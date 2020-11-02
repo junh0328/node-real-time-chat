@@ -1,40 +1,48 @@
 // Require the express module
-const express = require('express');
-
+const express = require("express");
 // create a new express application
 const app = express();
-
 // require the http module
-const http = require('http').Server(app);
-
+const http = require("http").Server(app);
 // require the socket.io module
-const io = require('socket.io');
-
+const io = require("socket.io");
 const port = 5000;
+
+const bodyParser = require("body-parser");
+// make a router
+const chatRouter = require("./routes/chatRoute");
+
+app.use(bodyParser.json());
+
+//routes
+app.use("/chats", chatRouter);
+
+//set the express.static middleware
+app.use(express.static(__dirname + "/public"));
 
 // create an event listener
 const socket = io(http);
 
 //database connection
-const Chat = require('./models/ChatSchema');
-const connect = require('./dbconnection');
+const Chat = require("./models/ChatSchema");
+const connect = require("./dbconnection");
 
 // to listen to messages
-socket.on('connection', (socket) => {
-  console.log('user connected');
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+socket.on("connection", (socket) => {
+  console.log("user connected");
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
   });
-  socket.on('chat message', function (msg) {
-    console.log('message: ' + msg);
+  socket.on("chat message", function (msg) {
+    console.log("message: " + msg);
     //broadcast message to everyone in port:5000 except yourself
-    socket.broadcast.emit('received', { message: msg });
+    socket.broadcast.emit("received", { message: msg });
 
     connect.then((db) => {
-      console.log('connected correctly to the server');
+      console.log("connected correctly to the server");
 
       // to save our chat Message on mongoDB
-      let chatMessage = new Chat({ message: msg, sender: 'junhee' });
+      let chatMessage = new Chat({ message: msg, sender: "junhee" });
       chatMessage.save();
     });
   });
