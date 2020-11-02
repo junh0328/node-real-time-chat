@@ -15,11 +15,28 @@ const port = 5000;
 // create an event listener
 const socket = io(http);
 
+//database connection
+const Chat = require('./models/ChatSchema');
+const connect = require('./dbconnection');
+
 // to listen to messages
 socket.on('connection', (socket) => {
   console.log('user connected');
   socket.on('disconnect', () => {
     console.log('user disconnected');
+  });
+  socket.on('chat message', function (msg) {
+    console.log('message: ' + msg);
+    //broadcast message to everyone in port:5000 except yourself
+    socket.broadcast.emit('received', { message: msg });
+
+    connect.then((db) => {
+      console.log('connected correctly to the server');
+
+      // to save our chat Message on mongoDB
+      let chatMessage = new Chat({ message: msg, sender: 'junhee' });
+      chatMessage.save();
+    });
   });
 });
 
