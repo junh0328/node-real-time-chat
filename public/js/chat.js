@@ -1,34 +1,30 @@
 var socket = io();
-/*
-This is a self-executing function it initializes socket.io on the client side and emits the message typed into the input box.
-
-*/
-
-/*
-chat.js에서 emit 을 통해 ' event ' 안에 담긴 이벤트(ex) chat message)를 발생시키고, val를 비우면
-
-App.js에서 socket.on(' chat message ')를 통해 받아서 msg를 받았다고 콘솔창에 출력하고, received라는 이벤트를 발생시킨다.
-*/
+var messages = document.getElementById("messages");
 
 (function () {
   $("form").submit(function (e) {
-    //prevents page reloading
-    e.preventDefault();
-    socket.emit("chat message", $("#m").val());
-    $("#m").val("");
+    let li = document.createElement("li");
+    e.preventDefault(); // prevents page reloading
+    socket.emit("chat message", $("#message").val());
+
+    messages.appendChild(li).append($("#message").val());
+    let span = document.createElement("span");
+    messages.appendChild(span).append("by " + "Anonymous" + ": " + "just now");
+
+    $("#message").val("");
+
     return false;
   });
 
   socket.on("received", (data) => {
     let li = document.createElement("li");
     let span = document.createElement("span");
-
-    let messages = document.getElementById("messages");
-    messages.appendChild(li).appendChild(data.message);
-    messages.appendChild(span).append("by " + "annonymous" + ": " + "just now");
+    var messages = document.getElementById("messages");
+    messages.appendChild(li).append(data.message);
+    messages.appendChild(span).append("by " + "anonymous" + ": " + "just now");
     console.log("Hello bingo!");
   });
-});
+})();
 
 // fetching initial chat messages from the database
 (function () {
@@ -46,4 +42,28 @@ App.js에서 socket.on(' chat message ')를 통해 받아서 msg를 받았다고
           .append("by " + data.sender + ": " + formatTimeAgo(data.createdAt));
       });
     });
+})();
+
+//is typing...
+
+let messageInput = document.getElementById("message");
+let typing = document.getElementById("typing");
+
+//isTyping event
+messageInput.addEventListener("keypress", () => {
+  socket.emit("typing", { user: "Someone", message: "is typing..." });
+});
+
+socket.on("notifyTyping", (data) => {
+  typing.innerText = data.user + " " + data.message;
+  console.log(data.user + data.message);
+});
+
+//stop typing
+messageInput.addEventListener("keyup", () => {
+  socket.emit("stopTyping", "");
+});
+
+socket.on("notifyStopTyping", () => {
+  typing.innerText = "";
 });
